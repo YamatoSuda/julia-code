@@ -165,35 +165,6 @@
         end
     end
 
-    function MakeSigma()
-        any = []
-        for i=1:3
-            push!(any,sigma(i))
-        end
-        return any
-    end
-
-    function MakeLambda()
-        any = []
-        for a=1:8
-            push!(any,lambda(a))
-        end
-        return any
-    end
-
-    # SU(2) color orientation matrix (random)
-    function SU2matrix(su2,sig)
-        return exp(im * 0.5 * sum(su2 .* sig))
-    end
-
-    # SU(3) color orientation matrix (random)
-    function SU3matrix(su3,lam)
-        return exp(im * 0.5 * sum(su3 .* lam))
-    end
-
-#####################################################################
-#2021-9-27 改良前の旧コード（以下）--------------------------------------
-#=
     function make_sigma()
         any = []
         for i=1:3
@@ -210,15 +181,13 @@
         return any
     end
 
-
     # SU(2) color orientation matrix (random)
-    function SU2_matrix(su2,sig)
+    function su2_matrix(su2,sig)
         return exp(im * 0.5 * sum(su2 .* sig))
     end
 
     # SU(3) color orientation matrix (random)
-    function SU3_matrix(su3,lam)
+    function su3_matrix(su3,lam)
         return exp(im * 0.5 * sum(su3 .* lam))
     end
-=#
 
