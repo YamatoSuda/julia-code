@@ -2,10 +2,9 @@ using Plots
 using Random
 using Distributions
 using ForwardDiff
+using QuadGK
 
 # Generating Gaussian distribution (1-dim) by using HMC method
-v(x) = 0.5*x^2
-
 function S(v,x,n_size)
     sum(v(x[i]) for i=1:n_size)
 end
@@ -28,27 +27,23 @@ function HMC_1dim(x,parameter)
         x_ini = zeros(n_size)
         x_fin = zeros(n_size)
     
-        #初期配位を保存
-        for i=1:n_size x_ini[i] = x[i] end
+        #x -> x_ini
+        x_ini = x[:]
     
-        #初期配位のハミルトニアンを計算
+        #cal H_ini -> leapfrog -> H_fin
         H_ini = H(x_ini,p_ini,n_size)
-    
-        #リープフロッグで時間発展
         leapfrog!(x,p_ini,parameter)
-    
-        #時間発展後の配位を保存
-        for i=1:n_size x_fin[i] = x[i]; p_fin[i] = p_ini[i] end
-    
-        #時間発展後のハミルトニアンを計算
+
+        x_fin = x[:]
+        p_fin = p_ini[:]
         H_fin = H(x_fin,p_fin,n_size)
     
         #Metropolis check
         r=rand()
         if r<exp(H_ini - H_fin)
-            for i=1:n_size x[i] = x_fin[i] end
+            x = x_fin[:]
         else
-            for i=1:n_size x[i] = x_ini[i] end
+            x = x_ini[:]
         end
 end
 
@@ -91,29 +86,46 @@ function gen_configs(Ω,n_con,parameter)
     end
 end
 
+square(x) = x^2
+
+function x_ev(Ω)
+    ret = sum(Ω)
+    return ret/length(Ω)
+end
+
+function xx_ev(Ω)
+    ret = sum(square,Ω)
+    return ret/length(Ω)
+end
+
 function main()
     #パラメータベクトル
-    n_config = 1_000_000          # # of configurations
+    n_config = 1000000          # # of configurations
     n_size   = 1
     n_tau    = 100
     τ        = 5
     q        = [n_size,n_tau,τ]
     Ω        = zeros(n_config)
 
-    #result = @benchmark gen_configs(n_config,q)
-    @time gen_configs(Ω,n_config,q)
-
-    ##########################################################
+    gen_configs(Ω,n_config,q)
+    x_value  = x_ev(Ω)
+    xx_value = xx_ev(Ω)
 
     ###plot###
-    gauss(x) = exp(-0.5*x^2)/sqrt(2*pi)
-    #pdf_v(x) = exp(-v(x))
-    #Z0,error = quadgk(pdf_v,-Inf,Inf)
-    #normed_v(x) = pdf_v(x)/Z0
+    #gauss(x) = exp(-0.5*x^2)/sqrt(2*pi)
+    pdf_func(x) = exp(-v(x))
+    Z0,error = quadgk(pdf_func,-Inf,Inf)
+    normed_func(x) = pdf_func(x)/Z0
 
     xr = range(-5,5,length=10001)
 
+    println("<x>  = ",x_value)
+    println("<xx> = ",xx_value)
     plot(Ω,st=:histogram,nbins=50,norm=:pdf,alpha=0.3,label="HMC's sample",legend=:topleft)
-    plot!(xr,gauss.(xr),label="pdf_ana")
+    plot!(xr,normed_func.(xr),label="pdf_ana")
 end
-main()
+
+#１次元の関数は適用可能
+v(x) = 0.5*x^2
+#v(x) = 2*x^2*(x^2-3)
+@time main()
